@@ -12,7 +12,7 @@
   const key=JSON.stringify([identity(),BATCH_FIELDS.map(id=>$(id).value)]);
   if(captionKey===key)return;
   captionKey=key;window.A2RSystemPhoto?.clearConfirmation();
-  if(!validNumbers()){$('caption').value='';return;}
+  const bad=[['batchCount',A2RBatch.integer($('batchCount').value)===null&&$('batchCount').value.trim()!==''],['batchTotal',A2RBatch.cents($('batchTotal').value)===null&&$('batchTotal').value.trim()!==''],['batchPiasters',A2RBatch.integer($('batchPiasters').value,true)===null],['batchCollected',A2RBatch.integer($('batchCollected').value,true)===null]];bad.forEach(([id,b])=>{if(b)$(id).setAttribute('aria-invalid','true');else $(id).removeAttribute('aria-invalid');});const badAny=bad.some(x=>x[1]);$('numbersError').hidden=!badAny;$('numbersError').textContent=badAny?'في خانة فيها رقم مش مظبوط (معلّمة بالأحمر). العدد والقروش والمجمعة أرقام صحيحة موجبة بس، والإجمالي رقم زي 1234.56. الوصف هيظهر لما تتظبط.':'';if(!validNumbers()){$('caption').value='';return;}
   const i={count:A2RBatch.integer($('batchCount').value),piasters:A2RBatch.integer($('batchPiasters').value,true),collected:A2RBatch.integer($('batchCollected').value,true),total:A2RBatch.money(A2RBatch.cents($('batchTotal').value))};
   $('caption').value=makeCaption(i);$('reviewSummary').textContent=i.count+' معاملة · '+i.total+' جنيه';
  }
@@ -107,7 +107,7 @@
   updateCaption();if(!canSend()){refresh();return;}
   return nativeShare();
  };
- $('workspaceIdentityEdit').onclick=()=>{if(!busy&&!systemState().busy)go('tagScreen');};
+ $('workspaceIdentityEdit').onclick=()=>{if(busy||systemState().busy)return;if(!source)return openStartScreen();go('tagScreen');};
  $('workspaceCamera').onclick=()=>{if(!busy&&!systemState().busy)$('cameraInput').click();};
  $('workspaceGallery').onclick=()=>{if(!busy&&!systemState().busy)$('galleryInput').click();};
  $('workspaceBatchEdit').onclick=()=>{if(source&&!busy&&!systemState().busy)go('editScreen');};

@@ -24,3 +24,5 @@ html{background:#0d0c09}body{min-height:100svh}.top{background:#15120b;max-width
 .start-note{text-align:center}
 .switch-account{font:inherit;font-size:11px;color:#e3b94a;background:#221e13;border:1px solid #735e2f;border-radius:20px;padding:6px 10px;white-space:nowrap;min-height:36px}
 @media(max-width:370px){.switch-account{font-size:9px;padding:5px 7px}}
+
+input[aria-invalid="true"]{border-color:#e5534b!important;box-shadow:0 0 0 2px rgba(229,83,75,.35)}.field-error{color:#ff8a80;font-size:.9rem;margin:.4rem 0 0;line-height:1.6}.field-error[hidden]{display:none}

@@ -52,7 +52,7 @@
   document.body.classList.add('simple-workspace');document.body.dataset.workspaceScreen=screen;
   $('batchMode').classList.toggle('active',mode==='batch');$('receiptMode').classList.toggle('active',mode==='receipt');
   for(const id of ['batchMode','receiptMode','workspaceArchive'])$(id).disabled=busy||s.busy;
-  $('workspaceTabs').hidden=screen==='editScreen'||screen==='tagScreen';
+  $('workspaceTabs').hidden=screen==='editScreen'||screen==='tagScreen'||screen==='startScreen';
   if(mode==='batch'){$('toTag').textContent='حفظ القص والفلتر والرجوع';$('toReview').textContent='حفظ البيانات والرجوع';}
   if(!on){if(screen==='queueScreen')$('backBtn').hidden=true;return;}
   $('screenTitle').textContent='الباتش';$('steps').hidden=true;$('draftActions').hidden=false;$('backBtn').hidden=true;
@@ -124,7 +124,7 @@
  $('workspaceDetails').append(keepBatchLabel);
  $('workspaceExportStatus').after($('shareHint'));
  const legacyToSend=$('toSend');legacyToSend.hidden=true;
- stageBReady.then(async()=>{initialized=true;try{if(pendingRestore)await pendingRestore();if(mode==='receipt')go('queueScreen');else await openMode('batch');}catch(e){say('المسودة لم تفتح بالكامل. جرّب استرجاعها من المسودات',true);go('sendScreen');}refresh();});
+ stageBReady.then(async()=>{initialized=true;try{if(pendingRestore)await pendingRestore();if(!hasStartIdentity())openStartScreen();else if(mode==='receipt')go('queueScreen');else await openMode('batch');}catch(e){say('المسودة لم تفتح بالكامل. جرّب استرجاعها من المسودات',true);go('sendScreen');}refresh();});
  window.addEventListener('pageshow',()=>refresh());
  window.addEventListener('pagehide',()=>{generation++;clearTimeout(timer);});
 })();

@@ -1,6 +1,6 @@
 'use strict';
-const CACHE='a2r-web-stage-b-v4:'+self.registration.scope,OCR_CACHE='a2r-web-ocr-v1';
-const FILES=['./','./index.html','./style.css','./app.js','./core.js','./worker.js','./batch-core.js','./flow.js','./extras.js','./vendor/pdf-lib.min.js','./assets/arabic.ttf','./assets/icon.svg','./assets/icon-192.png','./assets/icon-512.png','./manifest.webmanifest'];
+const CACHE='a2r-web-stage-b-v5:'+self.registration.scope,OCR_CACHE='a2r-web-ocr-v1';
+const FILES=['./','./index.html','./style.css','./app.js','./core.js','./worker.js','./batch-core.js','./flow.js','./extras.js','./tap-crop.js','./vendor/pdf-lib.min.js','./assets/arabic.ttf','./assets/icon.svg','./assets/icon-192.png','./assets/icon-512.png','./manifest.webmanifest'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES.map(f=>new Request(f,{cache:'reload'}))))));
 self.addEventListener('activate',e=>e.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('a2r-web-stage-b-')&&k.endsWith(':'+self.registration.scope)&&k!==CACHE).map(k=>caches.delete(k)))),self.clients.claim()])));
 self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(e.request.method!=='GET'||u.origin!==self.location.origin)return;e.respondWith((async()=>{const c=await caches.open(CACHE);const stored=await c.match(e.request,{ignoreSearch:true});if(stored)return stored;if(u.pathname.includes('/vendor/ocr/')){const o=await caches.open(OCR_CACHE),r=await o.match(e.request,{ignoreSearch:true});if(r)return r;}try{return await fetch(e.request);}catch(err){if(e.request.mode==='navigate')return c.match('./index.html');throw err;}})());});

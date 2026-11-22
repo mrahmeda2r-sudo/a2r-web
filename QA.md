@@ -1,31 +1,34 @@
-# Stage A verification, 22 November 2026
+# Stage B verification, 22 November 2026
 
-## Passed before handoff
+## Automated checks passed
 
-- 78 image-processing assertions, including matching the Q7 Dart selector and all three filter outputs byte for byte on five deterministic raw-pixel fixtures.
-- 32 browser checks in Chromium: service-worker cache readiness, photo import through the capture file chooser, full-image default, manual crop coordinates, full-image reset, rotation, each filter choice, JPG creation/download, single-page PDF creation, prepared-file invalidation after a metadata change, local draft restoration/deletion, and offline restoration plus PDF generation after reload.
-- File-share API requests verified using a simulated operating-system share handler for JPG and PDF. Unsupported-file-sharing fallback exercised.
-- No uncaught browser errors in those checks.
-- Layout checked at 320, 390 and 1280 CSS-pixel widths, with no horizontal overflow.
-- Actual rendered screenshot inspection of the Arabic interface and a generated PDF from a supplied receipt photo. The PDF contained the full source extent with the employee/unit strip above, outside the receipt. Test labels were placeholders.
+268 assertions in total: 123 browser checks and 145 processing/parser checks.
 
-## Still requires the owner's phone
+- 41 main browser checks: independent batch/receipts routes, contextual JPG-only batch action, manual whole-frame/free-corner crop controls, five filter choices, native-style tag, real OCR of one supplied bank closing slip (7 transactions, 2568.91), caption semantics, JPG filename/type, ordered receipt queue, reorder/delete/undo, one two-page PDF, image-share handoff, offline queue restore/PDF and no external image upload.
+- 52 edge browser checks: manual corrections protected during and after OCR/reload; actual offline OCR after a new document and removal of the model database; late OCR rejected after replacement with a same-named image; cached crop background; tag controls; batch-output invalidation; all working screens at 320/390/1280 widths; direct unchanged-JPEG byte preservation; one-page receipt PDF through the receipt UI; share fallback; crop-preserving bulk filters; per-item metadata/reload; actual Stage A worker/draft migration; isolated, path-scoped Stage B storage; later Stage A edits do not overwrite Stage B; Stage A offline cache remains intact.
+- 30 extras browser checks: real receipt OCR/search, normalized amount query including Arabic digits, cache reuse without another OCR call, no-match caution, cancellation/late-result protection, explicit sent-confirmation timing, per-item keep, added-unsent receipt protection, strict greater-than-12-hour boundaries, retained batch/receipt archive, removal of obsolete root image reference, archive download/two-tap deletion, and independent manual identity persistence after clearing drafts.
+- 67 number/parser checks: Arabic/Persian digits, currency separators, safe integer piasters, invalid values, complete/partial/multiple physical closing slips, no double-summing repeated totals, and warnings.
+- 78 image-core checks, including byte-for-byte agreement with the existing Dart automatic-selector/filter fixtures. The image core is unchanged.
 
-- Actual hardware camera handoff and image format/orientation on Android and iPhone.
-- Safari/Home Screen app behavior on an actual iPhone. Chromium's mobile-size testing is not an iPhone hardware test.
-- The real native WhatsApp share target. A simulated share handler cannot prove transport or delivery.
-- Whether WhatsApp accepts the JPG as a photo on that device; HD must be selected inside WhatsApp when available. PDF must arrive as a document. Never infer message delivery just because the share sheet opened.
-- Runtime/memory on high-resolution phone images and long receipts. No phone speed claim is made.
-- The final HTTPS host, its MIME/cache configuration, subdirectory URL if any, and a fresh offline-readiness check on that deployed origin.
+Actual screenshots were inspected, including mobile-width batch send/crop/search/archive screens. Generated one-page and two-page PDF pages were rendered and inspected. Original receipt extent is preserved and the receipt identity strip is above, not covering, the image. Test names are placeholders. The supplied photo and generated test receipts are not in the site package.
+
+## Important limits
+
+- OS share handlers were simulated. No real WhatsApp send or delivery was performed by these tests.
+- Chromium mobile-size testing is not iPhone/Safari or Android hardware testing.
+- One batch sample OCR success is not a broad accuracy guarantee. Receipt search is best suited to printed digits and English text; absent OCR matches do not prove absence from the image.
+- No measured phone speed, camera autofocus, battery or high-resolution memory guarantee. The first OCR setup is separate from opening the basic app.
+- Cleanup happens on opening, only for explicitly confirmed-sent files older than 12 hours. Unsent files remain. Keep sends them to the local archive. Exported files, camera gallery and other app copies are not deleted.
+- ID-card composition was removed at the user's request. The native Google scanner/camera UI is not included.
+- This package has not been deployed. The final HTTPS origin and every hosted file still need a post-upload check.
 
 ## Owner acceptance sequence
 
-1. Open the actual hosted HTTPS link on the owner's Android first. Wait for offline readiness.
-2. Capture a new receipt with all edges visible. Review handwriting and small digits using the original-detail link.
-3. Drag each crop corner, use Picture All to restore the full image, rotate, and compare all three filters.
-4. Enter test employee/unit text, prepare JPG, save/share through WhatsApp as a photo, and confirm the actual received copy. Select HD where offered.
-5. Prepare the one-page PDF, share as document, download it at the receiver, and verify the strip does not cover content and the whole receipt is present.
-6. Disable internet, reload the cached application, restore the draft and generate the PDF. Reconnect before sending WhatsApp.
-7. Export all test files before clearing the draft. Only after this passes should the two employees test on their iPhones.
-
-No receipt test photo, generated receipt file, private employee roster, account credential or analytics is included in the distributable site folder. The stage is intentionally limited to one photo, not a finished multi-receipt replacement.
+1. Open the final uploaded URL on the owner's Android, wait for base offline readiness, and verify saved employee/unit/building.
+2. Capture a new batch. Move/resize the whole crop frame and free corners, reset the rectangle, rotate and compare filters. Check small digits from the original.
+3. Move the identity tag; review/correct all four batch fields. Send JPG plus caption through actual WhatsApp, confirm it arrives as a photo, select HD if offered, and inspect the received copy before pressing sent confirmation.
+4. Add several receipt photos, edit/reorder/hide a tag, build PDF and verify every received page and page label. Test receipt photo sharing/fallback separately.
+5. Search a printed receipt amount. Verify it against the image, then try a nonmatching query and clear the filter. PDF should still include the whole queue.
+6. Prepare optional offline OCR. Disable network, reopen and restore work, read a batch and create receipt PDF. Reconnect for WhatsApp.
+7. Mark a test file keep; confirm sent only after receiving it. Check the on-open 12-hour behavior with disposable test work, never with unsaved production receipts.
+8. Close/reopen and check fields and queue again. Only after this passes should employees test their iPhones.

@@ -8,8 +8,18 @@
  function imageKey(){if(!source||!image)return '';return JSON.stringify([photoKey(snapshot()),imageVersion,identity(),$('quality').value,$('showTag').checked,$('tagLayout').value,tagPos]);}
  function identityReady(){return !!($('employee').value.trim()&&$('unit').value.trim()&&$('tagDate').value);}
  function validNumbers(){return A2RBatch.integer($('batchCount').value)!==null&&A2RBatch.integer($('batchPiasters').value,true)!==null&&A2RBatch.integer($('batchCollected').value,true)!==null&&A2RBatch.cents($('batchTotal').value)!==null;}
+ function checkSystemTotal(){
+  const raw=$('systemTotal').value.trim(),err=$('systemTotalError');
+  $('systemTotal').removeAttribute('aria-invalid');err.hidden=true;err.textContent='';
+  if(!raw)return;
+  const st=A2RBatch.cents($('systemTotal').value);
+  if(st===null){$('systemTotal').setAttribute('aria-invalid','true');err.hidden=false;err.textContent='إجمالي السيستم مش رقم مظبوط. اكتبه زي 1234.56 أو سيب الخانة فاضية.';return;}
+  const bt=A2RBatch.cents($('batchTotal').value);
+  if(bt!==null&&st!==bt){$('systemTotal').setAttribute('aria-invalid','true');err.hidden=false;err.textContent='إجمالي السيستم ('+A2RBatch.money(st)+' جنيه) مش مطابق لإجمالي الباتش ('+A2RBatch.money(bt)+' جنيه). راجعهم قبل الإرسال.';}
+ }
  function updateCaption(){
   const key=JSON.stringify([identity(),BATCH_FIELDS.map(id=>$(id).value)]);
+  checkSystemTotal();
   if(captionKey===key)return;
   captionKey=key;window.A2RSystemPhoto?.clearConfirmation();
   const bad=[['batchCount',A2RBatch.integer($('batchCount').value)===null&&$('batchCount').value.trim()!==''],['batchTotal',A2RBatch.cents($('batchTotal').value)===null&&$('batchTotal').value.trim()!==''],['batchPiasters',A2RBatch.integer($('batchPiasters').value,true)===null],['batchCollected',A2RBatch.integer($('batchCollected').value,true)===null]];bad.forEach(([id,b])=>{if(b)$(id).setAttribute('aria-invalid','true');else $(id).removeAttribute('aria-invalid');});const badAny=bad.some(x=>x[1]);$('numbersError').hidden=!badAny;$('numbersError').textContent=badAny?'في خانة فيها رقم مش مظبوط (معلّمة بالأحمر). العدد والقروش والمجمعة أرقام صحيحة موجبة بس، والإجمالي رقم زي 1234.56. الوصف هيظهر لما تتظبط.':'';if(!validNumbers()){$('caption').value='';return;}
@@ -82,6 +92,7 @@
   $('shareBtn').textContent=label;
   $('shareBtn').disabled=(!photo)||busy||s.busy||s.loading||!!job||(!identityReady()?false:!ready&&!errorKey)||(!validNumbers()&&identityReady()&&errorKey!==key);
   $('workspaceExportStatus').textContent=hint;$('workspaceExportStatus').classList.toggle('danger',errorKey===key);
+  $('copyCaptionBig').hidden=!(shareKey&&shareKey===key&&$('caption').value.trim());
   $('downloadBtn').hidden=!ready;$('openBtn').hidden=!ready;
   if(allowSchedule)schedule();
  }
@@ -99,14 +110,17 @@
   if(batchDraft){if(source!==batchDraft.source)await activatePhoto(batchDraft);}else{source=null;image=null;$('editor').hidden=true;invalidate();}
   captureOptions=false;go('sendScreen');
  };
+ let shareKey='';
  const nativeShare=$('shareBtn').onclick;
  $('shareBtn').onclick=()=>{
   if(busy||systemState().busy)return;
   if(!identityReady()){go('tagScreen');$('employee').focus();return;}
   if(errorKey===imageKey()){schedule(true);refresh(false);return;}
   updateCaption();if(!canSend()){refresh();return;}
+  shareKey=imageKey();refresh(false);
   return nativeShare();
  };
+ $('copyCaptionBig').onclick=()=>$('copyCaption').click();
  $('workspaceIdentityEdit').onclick=()=>{if(busy||systemState().busy)return;if(!source)return openStartScreen();go('tagScreen');};
  $('workspaceCamera').onclick=()=>{if(!busy&&!systemState().busy)$('cameraInput').click();};
  $('workspaceGallery').onclick=()=>{if(!busy&&!systemState().busy)$('galleryInput').click();};

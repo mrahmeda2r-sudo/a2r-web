@@ -26,3 +26,74 @@ html{background:#0d0c09}body{min-height:100svh}.top{background:#15120b;max-width
 @media(max-width:370px){.switch-account{font-size:9px;padding:5px 7px}}
 
 input[aria-invalid="true"]{border-color:#e5534b!important;box-shadow:0 0 0 2px rgba(229,83,75,.35)}.field-error{color:#ff8a80;font-size:.9rem;margin:.4rem 0 0;line-height:1.6}.field-error[hidden]{display:none}
+
+/* Easy flow (easy-flow.js): one gold action per screen, tools folded, previews first. */
+button:disabled,.primary:disabled,.secondary:disabled{background:#24211a!important;color:#857c68!important;border-color:#3a3325!important;opacity:1;cursor:not-allowed;box-shadow:none!important}
+.update-banner{position:fixed;top:calc(10px + env(safe-area-inset-top));left:12px;right:12px;max-width:680px;margin:auto;padding:10px 12px;border:1px solid #86713b;background:#31291b;color:#f4e4b9;border-radius:15px;z-index:60;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;box-shadow:0 10px 40px #0008}
+.update-banner button{min-height:44px;padding:8px 16px}
+.easy-start,.easy-final,.easy-toggle,.easy-note,.easy-ocr-note{display:none}
+body.easy-batch .easy-toggle,body.easy-batch .easy-note{display:flex}
+body.easy-batch .easy-note{display:block;margin:4px 0 0;font-size:13px;line-height:1.7;color:#cfe8c0}
+body.easy-batch .easy-note.warn{color:#f2c46b}
+body.easy-batch .easy-toggle{margin:0 0 14px;min-height:46px;font-size:13px}
+body.easy-batch #steps{display:none!important}
+body.easy-batch .toast{bottom:auto;top:calc(76px + env(safe-area-inset-top))}
+/* Edit screen order: paper preview, gold continue, manual tools, retake. */
+body.easy-batch #editScreen:not([hidden]){display:flex;flex-direction:column}
+body.easy-batch #editor:not([hidden]){display:contents}
+body.easy-batch .easy-paper{order:1}
+body.easy-batch #toTag{order:2;margin-bottom:14px}
+body.easy-batch #easyManualToggle{order:3}
+body.easy-batch .easy-crop{order:4}
+body.easy-batch .easy-capture{order:5}
+body.easy-batch:not(.easy-manual-open) .easy-crop{display:none}
+body.easy-batch.easy-pending .easy-crop{border-color:#b08d3e}
+body.easy-batch .easy-paper{display:flex;flex-direction:column}
+body.easy-batch .easy-paper .result-wrap{order:2;margin-top:12px}
+body.easy-batch .easy-paper .result-wrap canvas{max-height:62svh}
+body.easy-batch .easy-paper #easyFilterToggle{order:3;margin:14px 0 0}
+body.easy-batch .easy-paper .filters{order:4;margin-top:12px}
+body.easy-batch .easy-paper>.hint{order:5}
+body.easy-batch:not(.easy-filter-open) .easy-paper .filters,body.easy-batch:not(.easy-filter-open) .easy-paper>.hint{display:none}
+body.easy-batch.easy-pending .easy-paper .result-wrap{display:none}
+body.easy-batch.easy-pending .easy-crop{order:0}
+body.easy-batch.easy-pending .easy-paper{order:1}
+body.easy-batch.easy-pending .easy-paper .section-head{display:none}
+body.easy-batch #previewBtn,body.easy-batch #cameraBtn{background:#29251b;border-color:#735e2f;color:#efe4c9}
+/* Workspace: empty = big camera; with photo = final preview + numbers + send. */
+body.easy-batch.easy-empty .easy-start{display:block;text-align:center;border:1px solid #6f5c32;border-radius:18px;background:#1d1b14;padding:26px 18px 20px;margin:12px 0 16px}
+.easy-start-mark{font-size:46px;color:#e3b94a;line-height:1;margin-bottom:8px}
+.easy-start h2{margin:0 0 6px;font-size:20px}
+.easy-start .hint{margin:0 0 18px}
+.easy-start .easy-big{min-height:72px;font-size:20px;margin-bottom:10px;width:100%}
+.easy-start .secondary{width:100%}
+body.easy-batch.easy-empty #workspacePhotos,body.easy-batch.easy-empty .workspace-system-note,body.easy-batch.easy-empty #workspaceNumbers,body.easy-batch.easy-empty #workspaceExportStatus,body.easy-batch.easy-empty #shareBtn,body.easy-batch.easy-empty .workspace-share-note,body.easy-batch.easy-empty #shareHint,body.easy-batch.easy-empty #workspaceDetails{display:none!important}
+body.easy-batch.easy-review .easy-final{display:block;border:1px solid #6f5c32;border-radius:18px;background:#1d1b14;padding:12px;margin:12px 0 14px}
+.easy-final .section-head{margin-bottom:4px}
+.easy-final h2{font-size:16px;margin:0}
+.easy-final-hint{margin:0 0 8px;font-size:12px}
+.easy-final-wrap{background:#0c0c09;border:1px solid #3d3728;border-radius:12px;overflow:hidden;line-height:0;text-align:center}
+.easy-final-wrap canvas{max-width:100%;height:auto;max-height:66svh}
+.easy-final-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}
+.easy-final-actions button{min-height:46px;font-size:12px;padding:8px 4px}
+.easy-final #easyZoom{display:block;text-align:center}
+body.easy-batch.easy-review #workspaceBatchPanel{display:none}
+body.easy-batch.easy-review #workspacePhotos{grid-template-columns:1fr}
+body.easy-batch #systemCameraBtn{background:#29251b;border-color:#735e2f;color:#efe4c9}
+body.easy-batch .workspace-numbers .batch-fields input#batchCount,body.easy-batch .workspace-numbers .batch-fields input#batchTotal{height:60px;min-height:60px;font-size:24px;font-weight:700;direction:ltr;text-align:center;letter-spacing:.5px}
+body.easy-batch .workspace-numbers .batch-fields input{direction:ltr;text-align:center;font-size:17px}
+body.easy-batch .easy-ocr-note{display:block;font-size:11px;line-height:1.6;margin-top:4px;min-height:0}
+.easy-ocr-note.ocr-ok{color:#9fd39a}.easy-ocr-note.ocr-low{color:#f2c46b}.easy-ocr-note.ocr-missing{color:#ff9d8f}
+input.ocr-low{border-color:#e0a63a!important;box-shadow:0 0 0 2px rgba(224,166,58,.35);background:#2a210f}
+input.ocr-missing{border-color:#e5534b!important;box-shadow:0 0 0 2px rgba(229,83,75,.3)}
+input.ocr-ok{border-color:#5f9a5a}
+body.easy-batch #shareBtn:not(:disabled){min-height:62px;font-size:19px}
+body.easy-batch.easy-pending #toTag{position:static;box-shadow:none}
+body.easy-batch.easy-review #workspaceCard{display:flex;flex-direction:column}
+body.easy-batch.easy-review #workspaceCard>*{order:10}
+body.easy-batch.easy-review #workspaceIdentity{order:1}
+body.easy-batch.easy-review #easyFinal{order:2}
+body.easy-batch.easy-review #workspaceNumbers{order:3}
+body.easy-batch.easy-review #workspacePhotos{order:4}
+body.easy-batch.easy-review .workspace-system-note{order:5}
+.tap-crop-card .crop-wrap canvas{touch-action:pan-y}.crop-loupe{position:fixed;z-index:60;width:120px;height:120px;border-radius:50%;border:3px solid #ebc451;box-shadow:0 6px 18px #000b;pointer-events:none;background:#000}.crop-loupe[hidden]{display:none}#tapFine{display:none}.crop-stale canvas{opacity:.45;transition:opacity .15s}

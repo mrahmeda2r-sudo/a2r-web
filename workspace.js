@@ -63,7 +63,7 @@
   $('batchMode').classList.toggle('active',mode==='batch');$('receiptMode').classList.toggle('active',mode==='receipt');
   for(const id of ['batchMode','receiptMode','workspaceArchive'])$(id).disabled=busy||s.busy;
   $('workspaceTabs').hidden=screen==='editScreen'||screen==='tagScreen'||screen==='startScreen';
-  if(mode==='batch'){$('toTag').textContent='حفظ القص والفلتر والرجوع';$('toReview').textContent='حفظ البيانات والرجوع';}
+  if(mode==='batch'){$('toTag').textContent='تمام، كمّل ←';$('toReview').textContent='تمام، رجوع للمراجعة';}
   if(!on){if(screen==='queueScreen')$('backBtn').hidden=true;return;}
   $('screenTitle').textContent='الباتش';$('steps').hidden=true;$('draftActions').hidden=false;$('backBtn').hidden=true;
   const id=identity();$('workspaceIdentitySummary').textContent=id.employee&&id.unit?id.employee+' · '+id.unit:'أضف اسم الموظف والوحدة';
@@ -81,7 +81,7 @@
   }
   updateCaption();
   const key=imageKey(),ready=photo&&exportFile&&exportKey===key;
-  let label='إرسال واتساب',hint='الصورة والوصف بيتجهزوا تلقائيًا بعد حفظ التعديل.';
+  let label='ابعت واتساب',hint='الصورة والوصف بيتجهزوا تلقائيًا بعد حفظ التعديل.';
   if(!photo){label='أضف صورة الباتش';hint='صوّر الباتش، هيفتح القص والفلتر على طول.';}
   else if(!identityReady()){label='كمّل الاسم والوحدة';hint='البيانات بتتكتب أول مرة وبتفضل محفوظة.';}
   else if(job||!ready&&!errorKey){label='جارٍ تجهيز الصورة…';hint='تقدر تكمّل الأرقام وإحنا بنجهّز الصورة.';}

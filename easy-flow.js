@@ -15,7 +15,11 @@
  const autoNote=mk('p','easy-note','',{id:'easyAutoNote',role:'status','aria-live':'polite'});paperCard.querySelector('.section-head').after(autoNote);
  const filterToggle=mk('button','secondary full easy-toggle','',{id:'easyFilterToggle',type:'button'});paperCard.append(filterToggle);
  const manualToggle=mk('button','secondary full easy-toggle','',{id:'easyManualToggle',type:'button'});cropCard.before(manualToggle);
- filterToggle.onclick=()=>{filterOpen=!filterOpen;applyEdit();if(filterOpen)$('filters').scrollIntoView({block:'center',behavior:'smooth'});};
+ const pop=mk('div','easy-pop','',{id:'easyFilterPop',role:'dialog','aria-modal':'true','aria-label':'اختيار الفلتر',hidden:''}),sheet=mk('div','easy-pop-sheet');pop.append(sheet);document.body.append(pop);
+ const closePop=()=>{pop.hidden=true;};
+ pop.addEventListener('click',e=>{if(e.target===pop)closePop();});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!pop.hidden)closePop();});
+ function openPop(){if(busy)return;sheet.replaceChildren(mk('h3','','اختار الفلتر'));for(const k of ['auto','receipt','thermal','photocopy','original']){const on=choice===k,b=mk('button','secondary easy-pop-opt'+(on?' on':''),LABELS[k]+(on?' ✓':''),{type:'button','data-pick':k});b.onclick=()=>{closePop();const t=document.querySelector('[data-filter="'+k+'"]');if(t&&!busy)t.click();};sheet.append(b);}const x=mk('button','text-button','إلغاء',{type:'button'});x.onclick=closePop;sheet.append(x);pop.hidden=false;}
+ filterToggle.onclick=openPop;
  manualToggle.onclick=()=>{if(tapPending())return;manualOpen=!manualOpen;applyEdit();if(manualOpen){drawCrop();cropCard.scrollIntoView({block:'start',behavior:'smooth'});}};
  const LABELS={auto:'تلقائي',receipt:'إيصال',thermal:'حراري باهت',photocopy:'فوتوكوبي',original:'الأصل'};
  function applyEdit(){
@@ -33,7 +37,7 @@
   autoNote.textContent=pend?'مقدرناش نحدد حدود الورقة لوحدنا. اضغط على الأربع زوايا في الصورة تحت.':(auto==='ok'?'✓ اتقصت تلقائي. راجع إن الورقة كلها ظاهرة والأرقام واضحة.':'راجع إن الورقة كلها ظاهرة والأرقام واضحة.');
   manualToggle.hidden=pend;manualToggle.textContent=manualOpen?'إخفاء أدوات القص':'✎ تعديل القص يدوي (زوايا، تدوير، الصورة كلها)';
   const ch=(typeof choice==='string'&&LABELS[choice])||'تلقائي';
-  filterToggle.textContent=filterOpen?'إخفاء الفلاتر':'تغيير الفلتر (دلوقتي: '+ch+')';
+  filterToggle.textContent='الفلتر: '+ch+' ‹';
   filterToggle.hidden=pend;
  }
  // Fresh photo: open tools only if auto-crop failed. Restored drafts keep tools folded unless the crop is incomplete.
@@ -66,16 +70,30 @@
  bTag.onclick=()=>{if(!busy&&hasPhoto())go('tagScreen');};
  bRe.onclick=()=>{if(!busy)$('cameraInput').click();};
 
+ let paperKey='';
  async function drawFinal(){
   if(!(isBatch()&&screen==='sendScreen'&&hasPhoto()))return;
   const src=$('resultCanvas');if(src.width<2||cropPending||tapPending())return;
-  const key=JSON.stringify([photoKey(snapshot()),tagPos,$('showTag').checked,$('tagLayout').value,identity(),src.width,src.height]);
-  if(key===finalKey)return;finalKey=key;const t=++finalToken;
-  try{const p=await composePreview(src,{receipt:false});if(t!==finalToken){p.width=p.height=1;return;}fc.width=p.width;fc.height=p.height;fc.getContext('2d').drawImage(p,0,0);p.width=p.height=1;
-   const lay=$('tagLayout').value;$('easyFinalInfo').textContent=!$('showTag').checked?'الورقة مخفية':lay==='overlay'?'الورقة على الصورة':lay==='below'?'الورقة تحت الصورة':'الورقة فوق الصورة';}
-  catch{finalKey='';}
+  const key=JSON.stringify([photoKey(snapshot()),$('showTag').checked,$('tagLayout').value,identity(),src.width,src.height,imageVersion]);
+  if(key===paperKey)return;paperKey=key;
+  try{await drawTag();}catch{paperKey='';}
  }
+ /* Paper preview lives on the batch screen: always on the image, at the bottom. Receipts mode keeps the separate paper screen. */
+ const tagScr=$('tagScreen'),card1=tagScr.children[0],card2=tagScr.children[1];
+ for(const id of ['employee','unit'])$(id).closest('label').classList.add('easy-id-hidden');
+ const holder=mk('div','easy-paper-merge','',{id:'easyPaperMerge'});fin.after(holder);
+ const lockTag=e=>{if(isBatch()&&screen==='sendScreen'){e.stopImmediatePropagation();e.preventDefault();}};
+ for(const t of ['pointerdown','pointermove','pointerup','touchstart'])$('tagCanvas').addEventListener(t,lockTag,true);
+ function placePaper(){
+  if(isBatch()){
+   if(card2.parentNode!==holder)holder.append(card2);
+   if(!$('tagDate').value)$('tagDate').value=localDate();
+   if(source&&image&&screen==='sendScreen'&&($('tagLayout').value!=='overlay'||tagPos.x!==.5||tagPos.y!==1||tagPos.s!==1)){$('tagLayout').value='overlay';tagPos={x:.5,y:1,s:1};invalidate();saveDraft();}
+  }else if(card2.parentNode!==tagScr)tagScr.insertBefore(card2,$('toReview'));
+ }
+ $('workspaceIdentityEdit').onclick=()=>{if(!busy)openStartScreen();};
  function applyWorkspace(){
+  placePaper();
   const batch=isBatch(),photo=hasPhoto();
   B.classList.toggle('easy-batch',batch);
   B.classList.toggle('easy-empty',batch&&screen==='sendScreen'&&!photo);
@@ -89,7 +107,7 @@
   applyEdit();
  }
  function schedule(){cancelAnimationFrame(frame);frame=requestAnimationFrame(applyWorkspace);}
- const baseGo=go;go=function(...a){const v=baseGo.apply(this,a);applyWorkspace();return v;};
+ const baseGo=go;go=function(...a){let toPaper=false;if(isBatch()&&a[0]==='tagScreen'){if(!hasIdentity()){openStartScreen();return;}a[0]='sendScreen';toPaper=true;}const v=baseGo.apply(this,a);applyWorkspace();if(toPaper)setTimeout(()=>holder.scrollIntoView({block:'start',behavior:'smooth'}),80);return v;};
  const baseSave=saveDraft;saveDraft=function(...a){const v=baseSave.apply(this,a);schedule();return v;};
  const baseInv=invalidate;invalidate=function(...a){const v=baseInv.apply(this,a);schedule();return v;};
  const basePrep=showPrepared;showPrepared=function(...a){const v=basePrep.apply(this,a);schedule();return v;};

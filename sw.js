@@ -1,5 +1,5 @@
 'use strict';
-const CACHE='a2r-web-stage-b-v15:'+self.registration.scope,OCR_CACHE='a2r-web-ocr-v1';
+const CACHE='a2r-web-stage-b-v16:'+self.registration.scope,OCR_CACHE='a2r-web-ocr-v1';
 const FILES=['./','./index.html','./style.css','./app.js','./core.js','./worker.js','./batch-core.js','./flow.js','./extras.js','./auto-detect.js','./tap-crop.js','./system-photo.js','./workspace.js','./easy-flow.js','./vendor/pdf-lib.min.js','./assets/arabic.ttf','./assets/icon.svg','./assets/icon-192.png','./assets/icon-512.png','./manifest.webmanifest'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES.map(f=>new Request(f,{cache:'reload'})))));});
 self.addEventListener('message',e=>{if(e.data&&e.data.type==='SKIP_WAITING')self.skipWaiting();});

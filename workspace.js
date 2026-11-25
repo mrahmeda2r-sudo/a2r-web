@@ -88,7 +88,8 @@
   else if(errorKey===key){label='إعادة تجهيز الصورة';hint=errorText;}
   else if(!validNumbers()){label='اكتب العدد والإجمالي';hint='العدد والقروش والمجمعة أعداد صحيحة، والإجمالي لحد خانتين عشريتين.';}
   else if(s.loading||s.busy){label='استنى صورة السيستم…';hint='بنجهز صورة السيستم، من غير قص أو فلاتر.';}
-  else hint=s.added?'جاهز: صورتان مستقلتان والوصف.':'جاهز: صورة الباتش والوصف. هنفكّرك بصورة السيستم قبل المشاركة.';
+  else if(!s.added){label='أضف صورة السيستم الأول';hint='صورة السيستم إجبارية. من غير ما تتضاف الباتش مش هيتبعت.';}
+  else hint='جاهز: صورتان مستقلتان والوصف.';
   $('shareBtn').textContent=label;
   $('shareBtn').disabled=(!photo)||busy||s.busy||s.loading||!!job||(!identityReady()?false:!ready&&!errorKey)||(!validNumbers()&&identityReady()&&errorKey!==key);
   $('workspaceExportStatus').textContent=hint;$('workspaceExportStatus').classList.toggle('danger',errorKey===key);
@@ -116,6 +117,7 @@
   if(busy||systemState().busy)return;
   if(!identityReady()){go('tagScreen');$('employee').focus();return;}
   if(errorKey===imageKey()){schedule(true);refresh(false);return;}
+  if(mode==='batch'&&!systemState().added){window.A2RSystemPhoto?.require();return;}
   updateCaption();if(!canSend()){refresh();return;}
   shareKey=imageKey();refresh(false);
   return nativeShare();

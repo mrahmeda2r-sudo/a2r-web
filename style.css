@@ -116,3 +116,9 @@ body.easy-batch.easy-review #easyPaperMerge{order:2}
 /* v17b: only the image with the paper at the bottom, plus show/hide */
 body.easy-batch.easy-review #easyPaperMerge #tagLayout,body.easy-batch.easy-review #easyPaperMerge .slider-label,body.easy-batch.easy-review #easyPaperMerge #tagReset,body.easy-batch.easy-review #easyPaperMerge #tagHint{display:none!important}
 body.easy-batch.easy-review #easyPaperMerge .tag-options label:has(#tagLayout){display:none!important}
+
+#workspaceIdentityEdit{display:none!important}
+#stepBack{position:sticky;top:0;z-index:20;background:#0d0c09;padding:6px 0 8px;margin:0}#stepBack[hidden]{display:none}#stepBack .secondary{min-height:44px}
+body.step-back-on #backBtn{display:none!important}
+#queueIdentity{display:none!important}
+#employee[readonly],#unit[readonly]{opacity:.75;cursor:not-allowed}

@@ -178,3 +178,102 @@ body.easy-batch.easy-review #workspaceNumbers .section-head{margin:0!important}
 #tagScreen .fields>details,#tagScreen .fields>.extra-settings{grid-column:1/-1}
 #tagScreen label{font-size:12px}
 #tagScreen .card{padding:10px!important}
+
+/* v20: feels like the A2R app — top bar (⚙ · logo · ⋯), install + splash, home status and «ملفاتي», app behaviour,
+   review screen with the batch image on top (zoom + move/resize the paper). Colours and the tab bar are unchanged. */
+html,body{overscroll-behavior-y:none}
+body.app-shell button,body.app-shell .ah-tile,body.app-shell .workspace-tab,body.app-shell summary,body.app-shell .as-file{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+body.app-shell button:active:not(:disabled),body.app-shell .ah-tile:active{transform:scale(.97);transition:transform .08s}
+body.app-shell img{-webkit-touch-callout:none}
+/* splash */
+#appSplash{position:fixed;inset:0;z-index:100;background:#15120b;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;animation:asSplashAuto .35s ease 3.6s forwards}
+#appSplash img{width:min(52vw,220px);height:auto}
+#appSplash span{width:26px;height:26px;border:3px solid rgba(227,185,74,.25);border-top-color:#e3b94a;border-radius:50%;animation:asSpin .9s linear infinite}
+#appSplash.gone{opacity:0;transition:opacity .3s;pointer-events:none}
+@keyframes asSplashAuto{to{opacity:0;visibility:hidden;pointer-events:none}}
+@keyframes asSpin{to{transform:rotate(360deg)}}
+/* top bar: [⚙ / back] [logo or title] [⋯] */
+body.app-shell .top{display:grid!important;grid-template-columns:52px 1fr 52px;align-items:center;gap:4px;min-height:58px;padding:calc(4px + env(safe-area-inset-top)) 8px 4px;position:sticky;top:0;z-index:30}
+.as-side{display:flex;align-items:center;gap:2px;min-width:0}.as-end{justify-content:flex-end}
+.as-mid{display:flex;align-items:center;justify-content:center;min-width:0;text-align:center}
+body.app-shell .top .brand{display:none;flex:none}
+body.app-shell .top .brand-mark{display:none}
+body.app-shell .top h1{margin:0;font-size:18px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;visibility:visible!important}
+body.app-shell.as-home .top .brand{display:flex}body.app-shell.as-home .top h1{display:none}
+.as-logo{height:40px;width:auto;display:block}
+.as-icon{width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:#e3b94a;font-size:24px;line-height:1;display:inline-flex;align-items:center;justify-content:center;padding:0;font-weight:700}
+.as-icon:active{background:rgba(227,185,74,.14)}.as-icon[hidden]{display:none}
+body.app-shell #backBtn{width:44px;height:44px;font-size:30px;color:#e3b94a;background:transparent;border:0}
+body.app-shell .top #network,body.app-shell .top #switchAccountBtn{display:none}
+#switchAccountBtn.as-moved{display:none!important}
+/* ⋯ menu */
+.as-menu{position:fixed;top:calc(54px + env(safe-area-inset-top));left:10px;z-index:70;min-width:200px;background:#211e16;border:1px solid #3d3626;border-radius:14px;box-shadow:0 12px 34px #000a;padding:6px;display:grid}
+.as-menu[hidden]{display:none}
+.as-menu-item{font:inherit;font-size:15px;text-align:start;color:#f3eee1;background:none;border:0;border-radius:10px;padding:13px 14px;min-height:46px}
+.as-menu-item:active{background:rgba(227,185,74,.14)}
+.as-menu-net{padding:8px 10px 6px;border-top:1px solid #353022;margin-top:4px}.as-menu-net .network{display:inline-block}
+/* sheets */
+.as-sheet{position:fixed;inset:0;z-index:65;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center}
+.as-sheet[hidden]{display:none}
+.as-sheet-panel{width:min(100%,560px);max-height:86svh;overflow:auto;background:#1d1b14;border:1px solid #353022;border-bottom:0;border-radius:26px 26px 0 0;padding:8px 16px calc(18px + env(safe-area-inset-bottom));animation:asUp .2s ease}
+.as-sheet-head{display:grid;justify-items:center;gap:8px;margin-bottom:8px}.as-sheet-head h3{margin:0;font-size:17px;justify-self:start}
+.as-grab{width:40px;height:4px;border-radius:4px;background:#4a4434}
+.as-row{padding:10px 0;border-bottom:1px solid #2c281d}.as-row:last-of-type{border-bottom:0}
+.as-notes .note{margin:0;padding:0;border:0;background:none}.as-notes .note p{font-size:12px;color:#b4ad9c;margin:4px 0}
+.as-version{text-align:center;color:#8d866f;font-size:12px;margin:12px 0 0}
+.as-steps{margin:4px 0 8px;padding-inline-start:22px;display:grid;gap:10px;font-size:15px;line-height:1.6}
+.as-share{display:inline-block;border:1px solid #6b5c34;border-radius:6px;padding:0 6px;color:#e3b94a}
+.as-log-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #2c281d}
+.as-log-row span{font-size:12px;color:#b4ad9c}.as-log-row span.ok{color:#acd2b2}
+@keyframes asUp{from{transform:translateY(30px);opacity:.4}to{transform:none;opacity:1}}
+/* home: tile status, install card, ملفاتي, version */
+.as-tile-state{font-size:12px;font-weight:600;color:#c9a27a;background:rgba(201,162,39,.1);border:1px solid rgba(201,162,39,.3);border-radius:20px;padding:3px 10px}
+.as-tile-state.ok{color:#acd2b2;background:rgba(80,160,100,.12);border-color:rgba(120,190,140,.4)}
+.as-install{display:flex;align-items:center;gap:8px;margin-top:14px;padding:12px;border:1px solid #574a2f;border-radius:18px;background:#1d1b14}
+.as-install[hidden]{display:none}
+.as-install-text{flex:1;display:grid;gap:2px;min-width:0}.as-install-text strong{font-size:14px}.as-install-text small{font-size:11px;color:#b4ad9c}
+.as-install .primary{min-height:42px!important;padding:0 16px}.as-install .text-button{font-size:12px;white-space:nowrap}
+.as-files{margin-top:16px}.as-files h2{font-size:16px;margin:0 0 8px}
+.as-files-list{display:grid;gap:8px}
+.as-file{font:inherit;color:#f3eee1;display:flex;align-items:center;gap:10px;width:100%;text-align:start;background:#1d1b14;border:1px solid #353022;border-radius:16px;padding:11px 12px;min-height:58px}
+.as-file-ic{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(227,185,74,.13);color:#e3b94a;font-weight:700;flex:none}
+.as-file.ok .as-file-ic{background:rgba(80,160,100,.14);color:#acd2b2}
+.as-file-text{flex:1;display:grid;gap:2px;min-width:0}.as-file-text strong{font-size:14px}.as-file-text small{font-size:11px;color:#b4ad9c}
+.as-file-go{color:#8d866f;font-size:20px}
+.as-files-empty{font-size:13px;color:#8d866f;text-align:center;padding:14px;border:1px dashed #353022;border-radius:16px;margin:0}
+.as-home-version{text-align:center;color:#6f6955;font-size:12px;margin:18px 0 8px}
+body.app-shell main>footer,body.app-shell>footer{display:none}
+/* transitions */
+.as-in{animation:asIn .22s ease}
+@keyframes asIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.as-in,.as-sheet-panel{animation:none}}
+
+/* review screen: batch image on top like the app's «بيانات الباتش» */
+.rv{display:none}
+body.rv-on #workspaceCard>#rvViewer{order:-1!important}
+body.app-shell #stepBack{top:var(--as-top,0px)!important;z-index:25}
+body.rv-on .rv{display:block;position:sticky;top:var(--rv-top,0px);z-index:8;background:#0d0c09;margin:0 -2px 8px;padding:2px 2px 6px}
+.rv-head{display:flex;align-items:center;gap:8px;margin:0 0 6px}.rv-head h2{margin:0;font-size:15px;flex:none}
+.rv-info{flex:1;font-size:11px;color:#b4ad9c;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv-fold{font-size:12px;flex:none;min-height:32px;padding:0 6px}
+.rv-stage{position:relative;height:var(--rv-h,340px);background:#000;border:1px solid #4a3a12;border-radius:14px;overflow:hidden;touch-action:none}
+body.rv-folded .rv-stage,body.rv-folded .rv-bar,body.rv-folded .rv-paper{display:none!important}
+.rv-pan{position:absolute;inset:0;transform-origin:0 0;will-change:transform}
+.rv-pan .tag-wrap{width:100%;height:100%;margin:0!important;border:0!important;border-radius:0!important;background:none!important;display:flex;align-items:center;justify-content:center}
+.rv-stage .tag-wrap canvas{max-width:100%!important;max-height:100%!important;width:auto!important;height:auto!important;touch-action:none!important;margin:0!important;display:block}
+.rv-zoom{position:absolute;left:6px;bottom:6px;display:grid;gap:6px;z-index:2}
+.rv-zoom button{width:38px;height:38px;border-radius:12px;border:1px solid #6b5c34;background:rgba(21,18,11,.88);color:#e3b94a;font-size:19px;font-weight:700;padding:0;line-height:1}
+.rv-zoom button:disabled{opacity:.35}
+.rv-badge{position:absolute;top:6px;left:6px;right:6px;z-index:2;text-align:center;font-size:12px;color:#15120b;background:#e3b94a;border-radius:10px;padding:5px 8px;pointer-events:none}
+.rv-badge[hidden]{display:none}
+body.rv-paper-on .rv-stage{border-color:#e3b94a;box-shadow:0 0 0 2px rgba(227,185,74,.35)}
+body.rv-paper-on .rv-zoom{display:none}
+.rv-bar{margin-top:6px}.rv-bar[hidden]{display:none}.rv-bar .secondary{width:100%;min-height:42px!important}
+.rv-paper{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}.rv-paper[hidden]{display:none}
+.rv-paper button{min-height:42px!important}
+/* the old collapsed preview is not needed on the review screen any more: its image now sits on top; the show/hide switch stays */
+body.rv-on #ahPreviewToggle{display:none!important}
+body.rv-on #easyPaperMerge:not(.ah-open),body.rv-on #easyPaperMerge{max-height:none!important;overflow:visible!important;opacity:1!important}
+body.rv-on #stepBack .full{margin:0!important}
+body.rv-on #sendScreen{padding-top:6px}
+body.rv-on #workspaceCard{padding-top:4px}

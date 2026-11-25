@@ -41,7 +41,7 @@
   filterToggle.hidden=pend;
  }
  // Fresh photo: open tools only if auto-crop failed. Restored drafts keep tools folded unless the crop is incomplete.
- for(const id of ['cameraInput','galleryInput'])$(id).addEventListener('change',()=>{if(isBatch()){manualOpen=false;filterOpen=false;}},true);
+ for(const id of ['cameraInput','galleryInput'])$(id).addEventListener('change',()=>{if(isBatch()){manualOpen=false;filterOpen=false;tagPos={x:.5,y:1,s:1};}},true);
  const baseDrawCrop=drawCrop;drawCrop=function(...a){const v=baseDrawCrop.apply(this,a);applyEdit();return v;};
  // Manual edits refresh the preview by themselves (no need to press «معاينة التحديد»).
  let autoPrev=null;
@@ -78,17 +78,17 @@
   if(key===paperKey)return;paperKey=key;
   try{await drawTag();}catch{paperKey='';}
  }
- /* Paper preview lives on the batch screen: always on the image, at the bottom. Receipts mode keeps the separate paper screen. */
+ /* Paper preview lives on the batch screen: on the image, at the bottom by default (a new photo starts there); it can be moved/resized from the review viewer (review-viewer.js). Receipts mode keeps the separate paper screen. */
  const tagScr=$('tagScreen'),card1=tagScr.children[0],card2=tagScr.children[1];
  for(const id of ['employee','unit'])$(id).closest('label').classList.add('easy-id-hidden');
  const holder=mk('div','easy-paper-merge','',{id:'easyPaperMerge'});fin.after(holder);
- const lockTag=e=>{if(isBatch()&&screen==='sendScreen'){e.stopImmediatePropagation();e.preventDefault();}};
+ const lockTag=e=>{if(isBatch()&&screen==='sendScreen'&&!B.classList.contains('rv-paper-on')){e.stopImmediatePropagation();e.preventDefault();}};
  for(const t of ['pointerdown','pointermove','pointerup','touchstart'])$('tagCanvas').addEventListener(t,lockTag,true);
  function placePaper(){
   if(isBatch()){
    if(card2.parentNode!==holder)holder.append(card2);
    if(!$('tagDate').value)$('tagDate').value=localDate();
-   if(source&&image&&screen==='sendScreen'&&($('tagLayout').value!=='overlay'||tagPos.x!==.5||tagPos.y!==1||tagPos.s!==1)){$('tagLayout').value='overlay';tagPos={x:.5,y:1,s:1};invalidate();saveDraft();}
+   if(source&&image&&screen==='sendScreen'&&$('tagLayout').value!=='overlay'){$('tagLayout').value='overlay';tagPos={x:.5,y:1,s:1};invalidate();saveDraft();}
   }else if(card2.parentNode!==tagScr)tagScr.insertBefore(card2,$('toReview'));
  }
  $('workspaceIdentityEdit').onclick=()=>{if(!busy)openStartScreen();};

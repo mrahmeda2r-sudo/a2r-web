@@ -4,7 +4,7 @@
    Uses the existing handlers only (go, tabs, backBtn, step-back); nothing in the image or export path. */
 'use strict';
 (() => {
- const VERSION='v20';
+ const VERSION='v21';
  const B=document.body,H=document.documentElement;
  const mk=(tag,cls,text,attrs={})=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text)e.textContent=text;for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);return e;};
  const standalone=()=>matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||navigator.standalone===true;
@@ -90,13 +90,13 @@
  const today=t=>t&&new Date(t).toDateString()===new Date().toDateString();
  function fileRow(name,sub,ok,fn){const r=mk('button','as-file','',{type:'button'});const ic=mk('span','as-file-ic',ok?'✓':'•');const tx=mk('span','as-file-text');tx.append(mk('strong','',name),mk('small','',sub));r.append(ic,tx,mk('span','as-file-go','‹'));r.classList.toggle('ok',!!ok);r.onclick=()=>{if(busy)return;buzz();fn();};filesList.append(r);}
  function fillHome(){if(!chooser||chooser.hidden)return;const sh=(typeof sentHistory==='object'&&sentHistory)||{};
-  const bs=tileState('ahBatch'),rs=tileState('ahReceipts');const bSent=today(sh.batch?.at),rSent=today(sh.receipts?.at);
+  const bs=tileState('ahBatch'),rs=tileState('ahReceipts');const F=window.A2RFresh;const bSent=F?F.sentToday('batch'):today(sh.batch?.at),rSent=F?F.sentToday('receipt'):today(sh.receipts?.at);
   if(bs){bs.textContent=bSent?'✓ تم الإرسال':'لم يُرسل';bs.classList.toggle('ok',bSent);}
   if(rs){rs.textContent=rSent?'✓ تم الإرسال':'لم يُرسل';rs.classList.toggle('ok',rSent);}
   filesList.replaceChildren();
-  const hasBatch=typeof source!=='undefined'&&!!source;const n=(typeof receiptItems!=='undefined'&&receiptItems)?receiptItems.length:0;
+  if(F)F.fill(filesList);else{const hasBatch=typeof source!=='undefined'&&!!source;const n=(typeof receiptItems!=='undefined'&&receiptItems)?receiptItems.length:0;
   if(hasBatch)fileRow('صورة الباتش',sh.batch?'اتأكد إرسالها '+fmt(sh.batch.at):'لسه متبعتتش',!!sh.batch,()=>$('ahBatch').click());
-  if(n)fileRow('إيصالات الدفع ('+n+' صورة)',sh.receipts?'اتأكد إرسالها '+fmt(sh.receipts.at):'لسه متبعتتش',!!sh.receipts,()=>$('ahReceipts').click());
+  if(n)fileRow('إيصالات الدفع ('+n+' صورة)',sh.receipts?'اتأكد إرسالها '+fmt(sh.receipts.at):'لسه متبعتتش',!!sh.receipts,()=>$('ahReceipts').click());}
   const na=(typeof archiveItems!=='undefined'&&archiveItems)?archiveItems.length:0;
   if(na)fileRow('الأرشيف ('+na+')','الصور اللي اخترت تحتفظ بيها',false,()=>$('workspaceArchive').click());
   if(!filesList.children.length)filesList.append(mk('p','as-files-empty','مفيش ملفات لسه. ابدأ بالباتش أو إيصالات الدفع.'));

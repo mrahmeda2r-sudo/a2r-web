@@ -277,3 +277,11 @@ body.rv-on #easyPaperMerge:not(.ah-open),body.rv-on #easyPaperMerge{max-height:n
 body.rv-on #stepBack .full{margin:0!important}
 body.rv-on #sendScreen{padding-top:6px}
 body.rv-on #workspaceCard{padding-top:4px}
+
+/* v21 fresh sections + saved work */
+.fr-row{display:flex;gap:6px;align-items:stretch;min-width:0}
+.fr-row .as-file{flex:1;min-width:0}
+.fr-row .as-file-text small{white-space:normal}
+.fr-del{font:inherit;flex:none;min-width:44px;border-radius:14px;border:1px solid #353022;background:#1d1b14;color:#bfb6a1;font-size:14px;padding:0 10px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.fr-del.armed{border-color:#b45a4a;color:#f0b4a8;font-size:12px;max-width:96px;line-height:1.3}
+.fr-saved .as-files-list{margin-top:8px}

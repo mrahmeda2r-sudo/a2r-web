@@ -4,7 +4,7 @@
    Uses the existing handlers only (go, tabs, backBtn, step-back); nothing in the image or export path. */
 'use strict';
 (() => {
- const VERSION='v22';
+ const VERSION='v23';
  const B=document.body,H=document.documentElement;
  const mk=(tag,cls,text,attrs={})=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text)e.textContent=text;for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);return e;};
  const standalone=()=>matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||navigator.standalone===true;

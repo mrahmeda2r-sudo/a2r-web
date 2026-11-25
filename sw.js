@@ -1,5 +1,5 @@
 'use strict';
-const CACHE='a2r-web-stage-b-v21:'+self.registration.scope,OCR_CACHE='a2r-web-ocr-v1';
+const CACHE='a2r-web-stage-b-v22:'+self.registration.scope,OCR_CACHE='a2r-web-ocr-v1';
 const FILES=['./','./index.html','./style.css','./app.js','./core.js','./worker.js','./batch-core.js','./flow.js','./extras.js','./auto-detect.js','./tap-crop.js','./system-photo.js','./workspace.js','./easy-flow.js','./step-back.js','./app-home.js','./review-viewer.js','./app-shell.js','./fresh.js','./vendor/pdf-lib.min.js','./assets/arabic.ttf','./assets/icon.svg','./assets/icon-192.png','./assets/icon-512.png','./assets/icon-maskable-512.png','./assets/apple-touch-icon.png','./assets/logo.png','./manifest.webmanifest'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES.map(f=>new Request(f,{cache:'reload'})))));});
 self.addEventListener('message',e=>{if(e.data&&e.data.type==='SKIP_WAITING')self.skipWaiting();});

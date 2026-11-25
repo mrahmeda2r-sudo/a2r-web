@@ -5,6 +5,18 @@
    Image/crop/paper/export code is untouched: reopening uses the same draft objects and activatePhoto path. */
 'use strict';
 (() => {
+ /* Reading numbers uses only ONE of the four OCR engine files (the "lstm" one that fits this phone).
+    The offline download used to fetch all four (~17 MB); now it fetches only the one that is used
+    and frees the others if they were downloaded before. Same engine, same reading. */
+ try {
+  const simd = WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11]));
+  const unused = ['tesseract-core.wasm.js', 'tesseract-core-simd.wasm.js', simd ? 'tesseract-core-lstm.wasm.js' : 'tesseract-core-simd-lstm.wasm.js'];
+  for (let i = OCR_FILES.length - 1; i >= 0; i--)
+   if (unused.some(u => OCR_FILES[i].endsWith('/' + u))) OCR_FILES.splice(i, 1);
+  if ('caches' in window) caches.open('a2r-web-ocr-v1').then(c => Promise.all(unused.map(u => c.delete(new URL('vendor/ocr/' + u, location.href).href, {
+   ignoreSearch: true
+  })))).catch(() => {});
+ } catch {}
  const KEY = 'savedWork';
  let list = [],
   loaded = false,
@@ -22,6 +34,7 @@
  const sentAtOf = s => s.kind === 'batch' ? (s.batch?.sentAt || s.sent?.at || null) : (s.items?.find(p => Number.isFinite(p.sentAt))?.sentAt || s.sent?.at || null);
 
  function upsert(s) {
+  dirty.add(s.sid);
   const i = list.findIndex(x => x.sid === s.sid);
   if (i >= 0) list[i] = s;
   else list.push(s);
@@ -38,25 +51,267 @@
    }
   } catch {}
  }
+
+ /* ---------- storage v2 ----------
+    v21 kept the whole saved list (with every photo) in ONE record and rewrote all of it on every save.
+    Now: one small record per saved item ('sw:<sid>'), each photo stored ONCE as plain bytes ('img:<key>'),
+    never rewritten. Photos read back are rebuilt as in-memory files, so later saves never have to copy
+    a file that lives inside the database (that copy is what Safari refuses). */
+ const SP = 'sw:', IP = 'img:', GONE = 'savedWorkGone';
+ const blobKey = new WeakMap();
+ let dirty = new Set(), gone = new Set(), v1 = new Set();
+ window.A2RFresh_lastError = null;
+ const isLost = e => e && (e.name === 'InvalidStateError' || e.name === 'TransactionInactiveError' || (e.name === 'UnknownError' && !/quota|space|disk/i.test(e.message || '')) || /connection|closing|lost/i.test(e.message || ''));
+ const isFull = e => e && (e.name === 'QuotaExceededError' || /quota|space|disk/i.test(e.message || ''));
+ /* iPhone Safari drops the database connection when the site goes to the background (e.g. after sharing
+    to WhatsApp). Every later save then fails. Reconnect once and retry, for every part of the site. */
+ const baseDbOp = dbOp;
+ async function reconnect() {
+  try { db?.close?.(); } catch {}
+  db = await openDb();
+  watchDb();
+ }
+ function watchDb() {
+  try {
+   if (db && !db.__a2rWatched) {
+    db.__a2rWatched = true;
+    db.onclose = () => { db.__a2rClosed = true; };
+    db.onversionchange = () => { try { db.close(); } catch {} db.__a2rClosed = true; };
+   }
+  } catch {}
+ }
+ dbOp = async function(mode, action) {
+  try {
+   if (db?.__a2rClosed) await reconnect();
+   return await baseDbOp(mode, action);
+  } catch (e) {
+   if (!window.indexedDB || !isLost(e)) throw e;
+   await reconnect();
+   return baseDbOp(mode, action);
+  }
+ };
+ function txRun(fn) {
+  return new Promise((yes, no) => {
+   let tx;
+   try {
+    tx = db.transaction('drafts', 'readwrite');
+   } catch (e) {
+    return no(e);
+   }
+   fn(tx.objectStore('drafts'));
+   tx.oncomplete = () => yes();
+   tx.onerror = () => no(tx.error);
+   tx.onabort = () => no(tx.error || Error('لم يكتمل الحفظ'));
+  });
+ }
+ async function tx(fn) {
+  try {
+   if (db?.__a2rClosed) await reconnect();
+   return await txRun(fn);
+  } catch (e) {
+   if (!isLost(e)) throw e;
+   await reconnect();
+   return txRun(fn);
+  }
+ }
+ const newKey = () => 'i' + Date.now().toString(36) + Math.random().toString(16).slice(2, 8);
+ const plain = o => {
+  const pr = Object.getPrototypeOf(o);
+  return pr === Object.prototype || pr === null;
+ };
+ /* Copy a session for storage: photos become {__img:key}; things a database can't keep are left out. */
+ function pack(v, imgs, local) {
+  if (v === null || typeof v !== 'object') return typeof v === 'function' ? undefined : v;
+  if (v instanceof Blob) {
+   let k = blobKey.get(v) || local.get(v);
+   if (!k) {
+    k = newKey();
+    local.set(v, k);
+    imgs.push([k, v]);
+   }
+   return {
+    __img: k,
+    file: v instanceof File,
+    name: v.name || '',
+    type: v.type || '',
+    lastModified: v.lastModified || 0
+   };
+  }
+  if (Array.isArray(v)) return v.map(x => {
+   const y = pack(x, imgs, local);
+   return y === undefined ? null : y;
+  });
+  if (v instanceof Date || ArrayBuffer.isView(v) || v instanceof ArrayBuffer) return v;
+  if (!plain(v)) return undefined;
+  const out = {};
+  for (const [k, x] of Object.entries(v)) {
+   const y = pack(x, imgs, local);
+   if (y !== undefined) out[k] = y;
+  }
+  return out;
+ }
+ function refsOf(v, set = new Set()) {
+  if (!v || typeof v !== 'object') return set;
+  if (v.__img) set.add(v.__img);
+  else if (v instanceof Blob) {
+   const k = blobKey.get(v);
+   if (k) set.add(k);
+  } else if (Array.isArray(v) || plain(v))
+   for (const x of Object.values(v)) refsOf(x, set);
+  return set;
+ }
+ const hasLive = v => {
+  if (!v || typeof v !== 'object') return false;
+  if (v instanceof Blob) return true;
+  if (Array.isArray(v) || plain(v)) return Object.values(v).some(hasLive);
+  return false;
+ };
+ /* Rebuild a stored session with its photos as fresh in-memory files. */
+ async function unpack(s) {
+  if (!hasRefs(s)) return s;
+  const keys = [...refsOf(s)];
+  const recs = {};
+  for (const k of keys) recs[k] = await dbOp('readonly', st => st.get(IP + k));
+  const made = new Map();
+  const build = v => {
+   if (v === null || typeof v !== 'object') return v;
+   if (v.__img) {
+    if (made.has(v.__img)) return made.get(v.__img);
+    const r = recs[v.__img];
+    if (!r?.buf) return null;
+    const b = v.file ? new File([r.buf], v.name || 'image.jpg', {
+     type: v.type || r.type || '',
+     lastModified: v.lastModified || Date.now()
+    }) : new Blob([r.buf], {
+     type: v.type || r.type || ''
+    });
+    blobKey.set(b, v.__img);
+    made.set(v.__img, b);
+    return b;
+   }
+   if (Array.isArray(v)) return v.map(build);
+   if (!plain(v)) return v;
+   const o = {};
+   for (const [k, x] of Object.entries(v)) o[k] = build(x);
+   return o;
+  };
+  return build(s);
+ }
+ const hasRefs = v => !!v && typeof v === 'object' && (v.__img ? true : (Array.isArray(v) || plain(v)) && Object.values(v).some(hasRefs));
+
+ function failMsg(e) {
+  const name = e?.name || 'Error';
+  window.A2RFresh_lastError = name + ': ' + (e?.message || '');
+  try { console.warn('A2R save failed', name, e?.message); } catch {}
+  if (isFull(e)) return 'الشغل ما اتحفظش لأن مساحة التخزين على الموبايل مليانة. امسح الملفات القديمة من «ملفاتي» وجرّب تاني. الشغل المفتوح لسه موجود.';
+  return 'الشغل ما اتحفظش: المتصفح رفض الحفظ (' + name + '). اقفل الموقع وافتحه تاني وجرّب. الشغل المفتوح لسه موجود.';
+ }
+
+ /* Write only what changed: the changed items, and each new photo once. */
  async function persist() {
   if (!db) return true; /* no storage at all on this browser: nothing could be kept anyway */
   try {
-   if (!loaded) {
-    const saved = await dbOp('readonly', st => st.get(KEY));
-    const old = Array.isArray(saved?.list) ? saved.list : [];
-    for (const x of old)
-     if (!list.some(y => y.sid === x.sid)) list.push(x);
+   if (!loaded) await loadList();
+   const ids = [...dirty];
+   const imgs = [], local = new Map(), packed = [];
+   for (const sid of ids) {
+    const s = list.find(x => x.sid === sid);
+    if (s) packed.push(pack(s, imgs, local));
    }
-   await dbOp('readwrite', st => st.put({
-    v: 1,
-    list
-   }, KEY));
+   const bytes = [];
+   for (const [k, b] of imgs) bytes.push([k, await b.arrayBuffer(), b.type || '']);
+   const goneNow = [...gone];
+   await tx(st => {
+    for (const [k, buf, type] of bytes) st.put({ buf, type, size: buf.byteLength }, IP + k);
+    for (const p of packed) st.put(p, SP + p.sid);
+    for (const sid of ids)
+     if (!list.some(x => x.sid === sid)) st.delete(SP + sid);
+    if (goneNow.length) st.put({ sids: goneNow }, GONE);
+   });
+   for (const [b, k] of local) blobKey.set(b, k);
+   /* keep only the small stored copy in memory */
+   for (const p of packed) {
+    const i = list.findIndex(x => x.sid === p.sid);
+    if (i >= 0) list[i] = p;
+   }
+   dirty = new Set();
    loaded = true;
+   gc();
    checkSpace();
    return true;
-  } catch {
-   say('الشغل ما اتحفظش لأن مساحة التخزين مليانة أو المتصفح منع الحفظ. امسح الملفات القديمة من «ملفاتي» وجرّب تاني. الشغل المفتوح لسه موجود.', true);
+  } catch (e) {
+   say(failMsg(e), true);
    return false;
+  }
+ }
+
+ /* Delete photos no saved item uses any more (never touches saved items themselves). */
+ async function gc() {
+  try {
+   if (!loaded) return;
+   const used = new Set();
+   for (const s of list) refsOf(s, used);
+   for (const s of openSessions()) refsOf(s, used);
+   if (v1.size) return; /* old list not fully moved yet: keep everything */
+   const keys = await dbOp('readonly', st => st.getAllKeys());
+   const drop = keys.filter(k => typeof k === 'string' && k.startsWith(IP) && !used.has(k.slice(IP.length)));
+   if (drop.length) await tx(st => drop.forEach(k => st.delete(k)));
+  } catch {}
+ }
+
+ /* Read the saved list: v2 records, plus anything still in the old one-record list (moved over here). */
+ async function loadList() {
+  const keys = await dbOp('readonly', st => st.getAllKeys());
+  const out = [];
+  for (const k of keys)
+   if (typeof k === 'string' && k.startsWith(SP)) {
+    const r = await dbOp('readonly', st => st.get(k));
+    if (r?.sid) out.push(r);
+   }
+  const g = await dbOp('readonly', st => st.get(GONE)).catch(() => null);
+  gone = new Set(g?.sids || []);
+  const old = await dbOp('readonly', st => st.get(KEY)).catch(() => null);
+  v1 = new Set();
+  for (const x of (Array.isArray(old?.list) ? old.list : []))
+   if (x?.sid && !gone.has(x.sid) && !out.some(y => y.sid === x.sid)) {
+    out.push(x);
+    v1.add(x.sid);
+   }
+  for (const x of list)
+   if (!out.some(y => y.sid === x.sid)) out.push(x);
+  list = out;
+  loaded = true;
+ }
+ /* Move items from the old single record into v2, one by one. The old record is removed only when
+    every item is safely moved, so his saved batch is never lost on the way. */
+ async function migrate() {
+  if (!v1.size) return;
+  for (const sid of [...v1]) {
+   dirty = new Set([sid]);
+   try {
+    const s = list.find(x => x.sid === sid);
+    const imgs = [], local = new Map(), p = pack(s, imgs, local), bytes = [];
+    for (const [k, b] of imgs) bytes.push([k, await b.arrayBuffer(), b.type || '']);
+    await tx(st => {
+     for (const [k, buf, type] of bytes) st.put({ buf, type, size: buf.byteLength }, IP + k);
+     st.put(p, SP + sid);
+    });
+    const i = list.findIndex(x => x.sid === sid);
+    if (i >= 0) list[i] = p;
+    v1.delete(sid);
+   } catch (e) {
+    window.A2RFresh_lastError = 'migrate ' + (e?.name || '') + ': ' + (e?.message || '');
+   }
+  }
+  dirty = new Set();
+  if (!v1.size) {
+   try {
+    await tx(st => {
+     st.delete(KEY);
+     st.delete(GONE);
+    });
+    gone = new Set();
+   } catch {}
   }
  }
 
@@ -138,7 +393,7 @@
  /* Save first; empty the sections only if the save worked, so nothing is ever dropped. */
  async function parkAll() {
   storeActive();
-  const before = list.slice();
+  const before = list.slice(), beforeDirty = new Set(dirty);
   const keep = {
    batchDraft,
    receiptItems,
@@ -156,6 +411,7 @@
   parkReceipts();
   if (!await persist()) {
    list = before;
+   dirty = beforeDirty;
    batchDraft = keep.batchDraft;
    receiptItems = keep.receiptItems;
    activeReceiptId = keep.activeReceiptId;
@@ -192,7 +448,12 @@
   const s = list.find(x => x.sid === sid);
   if (!s) return;
   if (!await parkAll()) return;
-  const t = list.find(x => x.sid === sid) || s;
+  let t = list.find(x => x.sid === sid) || s;
+  try {
+   t = await unpack(t);
+  } catch {
+   return say('الملف ده ما اتفتحش. جرّب تاني', true);
+  }
   hideChooser();
   if (t.identity?.tagDate) $('tagDate').value = t.identity.tagDate;
   if (t.kind === 'batch') {
@@ -229,8 +490,14 @@
  }
 
  async function remove(sid) {
+  const before = list.slice();
   list = list.filter(x => x.sid !== sid);
-  await persist();
+  dirty.add(sid);
+  if (v1.has(sid)) {
+   v1.delete(sid);
+   gone.add(sid);
+  }
+  if (!await persist()) list = before;
   fillAll();
  }
 
@@ -388,9 +655,10 @@
  };
  async function parkSavedDraft() {
   try {
-   const saved = await dbOp('readonly', st => st.get(KEY));
-   list = Array.isArray(saved?.list) ? saved.list : [];
-   loaded = true;
+   watchDb();
+   list = [];
+   await loadList();
+   await migrate();
    const d = await dbOp('readonly', st => st.get('current'));
    if (d?.stageB) {
     const b = d.stageB;
@@ -446,10 +714,11 @@
      sent: null
     }));
    }
-   if (!await persist()) {
+   if (dirty.size && !await persist()) {
     loaded = false;
     return;
    }
+   gc();
    if (d?.stageB || d?.source) {
     const clean = {
      employee: d.employee,
